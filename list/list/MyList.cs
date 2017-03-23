@@ -2,9 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Remoting.Messaging;
 
 namespace list
 {
@@ -37,6 +35,8 @@ namespace list
             public Node(Node<TR> prev, Node<TR> next, TR data)
             {
                 Data = data;
+                Next = next;
+                Prev = prev;
             }
         }
 
@@ -55,6 +55,7 @@ namespace list
         {
             if (_mTail == null)
             {
+                Debug.Assert(_mHead == null);
                 CreateTheOnlyElement(data);
             }
             else
@@ -71,10 +72,13 @@ namespace list
         {
             if (_mHead == null)
             {
+                Debug.Assert(_mSize == 0);
                 CreateTheOnlyElement(data);
             }
             else
             {
+                Debug.Assert(_mSize > 0);
+                Debug.Assert(_mHead != null && _mTail != null);
                 var node = new Node<T>(null, _mHead, data);
                 _mHead.Prev = node;
                 _mHead = node;
@@ -87,19 +91,22 @@ namespace list
         {
             if (_mSize == 0)
             {
+                Debug.Assert(_mHead == null && _mTail == null);
                 throw new InvalidOperationException();
             }
 
             T retVal;
             if (_mHead == _mTail)
             {
+                Debug.Assert(_mSize == 1);
                 retVal = RemoveTheOnlyElement();
             }
             else
             {
+                Debug.Assert(_mSize > 1);
                 retVal = _mTail.Data;
-                _mTail.Prev.Next = null;
                 _mTail = _mTail.Prev;
+                _mTail.Next = null;
             }
 
             _mSize--;
@@ -119,13 +126,18 @@ namespace list
             T retVal;
             if (_mHead == _mTail)
             {
+                Debug.Assert(_mSize == 1);
+                Debug.Assert(_mHead != null);
                 retVal = RemoveTheOnlyElement();
             }
             else
             {
+                Debug.Assert(_mHead != null && _mTail != null);
+                Debug.Assert(_mHead.Next != null);
+                Debug.Assert(_mSize > 1);
                 retVal = _mHead.Data;
-                _mHead.Next.Prev = null;
                 _mHead = _mHead.Next;
+                _mHead.Prev = null;
             }
 
             _mSize--;
@@ -185,11 +197,31 @@ namespace list
         private class Enumerator<TR> : IEnumerator<TR>
         {
             private Node<TR> _node;
+            private readonly Node<TR> _head;
+            private bool _beforeBegin;
 
-            public Enumerator(Node<TR> node)
+            public Enumerator(Node<TR> node, bool beforeBegin = false, Node<TR> head = null)
             {
                 _node = node;
+                _beforeBegin = beforeBegin;
+                _head = beforeBegin ? head : FindHeadNode(node);
+                Debug.Assert(_head != null);
             }
+
+            private static Node<TR> FindHeadNode(Node<TR> someNode)
+            {
+                if (someNode == null)
+                {
+                    return null;
+                }
+                while (someNode.Next != null)
+                {
+                    someNode = someNode.Next;
+                }
+
+                return someNode;
+            }
+
 
             public TR Current
             {
@@ -210,6 +242,14 @@ namespace list
 
             public bool MoveNext()
             {
+                if (_beforeBegin)
+                {
+                    Debug.Assert(_node == null);
+                    _node = _head;
+                    _beforeBegin = false;
+                    return true;
+                }
+
                 if (_node == null)
                 {
                     return false;
@@ -221,6 +261,7 @@ namespace list
 
             public void Reset()
             {
+                _beforeBegin = true;
                 _node = null;
             }
         }
