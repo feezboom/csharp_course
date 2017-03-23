@@ -193,10 +193,10 @@ namespace list
 
 
 
-        private class Enumerator<TR> : IEnumerator<TR>
+        public class Enumerator<TR> : IEnumerator<TR>
         {
             private Node<TR> _node;
-            private readonly Node<TR> _head;
+            private Node<TR> _head;
             private bool _beforeBegin;
 
             public Enumerator(Node<TR> node, bool beforeBegin = false, Node<TR> head = null)
@@ -237,7 +237,11 @@ namespace list
 
             object IEnumerator.Current => this;
 
-            public void Dispose() { }
+            public void Dispose()
+            {
+                _node = null;
+                _head = null;
+            }
 
             public bool MoveNext()
             {
@@ -256,6 +260,11 @@ namespace list
 
                 _node = _node.Next;
                 return true;
+            }
+
+            public bool HasNext()
+            {
+                return !_beforeBegin && _node == null;
             }
 
             public void Reset()

@@ -18,6 +18,15 @@ namespace list
             Console.WriteLine(myList.Front());
             Console.WriteLine(myList.Back());
 
+            var i = myList.GetEnumerator();
+
+            i.
+
+            while (i.HasNext())
+            {
+                
+            }
+
             Console.ReadLine();
         }
     }
