@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,153 +27,212 @@ namespace list
      * Дополнение 1: коллекция поддерживает IEnumerable<T>
     */
 
-    class MyList<T>
+    internal class MyList<T> : IEnumerable<T>, IMyList<T>
     {
-        private class Node<R>
+        private class Node<TR>
         {
-            public Node<R> next;
-            public Node<R> prev;
-            public R data;
-            public Node(Node<R> prev, Node<R> next, R data)
+            public Node<TR> Next;
+            public Node<TR> Prev;
+            public readonly TR Data;
+            public Node(Node<TR> prev, Node<TR> next, TR data)
             {
-                this.data = data;
+                Data = data;
             }
         }
 
-        private Node<T> mHead;
-        private Node<T> mTail;
-        private int mSize;
+        private Node<T> _mHead;
+        private Node<T> _mTail;
+        private int _mSize;
 
         public MyList()
         {
-            mHead = null;
-            mTail = null;
-            mSize = 0;
+            _mHead = null;
+            _mTail = null;
+            _mSize = 0;
         }
 
         public void PushBack(T data)
         {
-            if (mTail == null)
+            if (_mTail == null)
             {
-                createTheOnlyElement(data);
+                CreateTheOnlyElement(data);
             }
             else
             {
-                Node<T> node = new Node<T>(mTail, null, data);
-                mTail.next = node;
+                var node = new Node<T>(_mTail, null, data);
+                _mTail.Next = node;
+                _mTail = node;
             }
 
-            mSize++;
+            _mSize++;
         }
 
         public void PushFront(T data)
         {
-            if (mHead == null)
+            if (_mHead == null)
             {
-                createTheOnlyElement(data);
+                CreateTheOnlyElement(data);
             }
             else
             {
-                Node<T> node = new Node<T>(null, mHead, data);
-                mHead.prev = node;
+                var node = new Node<T>(null, _mHead, data);
+                _mHead.Prev = node;
+                _mHead = node;
             }
 
-            mSize++;
+            _mSize++;
         }
 
         public T PopBack()
         {
-            if (mSize == 0)
+            if (_mSize == 0)
             {
                 throw new InvalidOperationException();
             }
 
             T retVal;
-            if (mHead == mTail)
+            if (_mHead == _mTail)
             {
-                retVal = removeTheOnlyElement();
+                retVal = RemoveTheOnlyElement();
             }
             else
             {
-                retVal = mTail.data;
-                mTail.prev.next = null;
-                mTail = null;
+                retVal = _mTail.Data;
+                _mTail.Prev.Next = null;
+                _mTail = _mTail.Prev;
             }
 
-            mSize--;
+            _mSize--;
             return retVal;
         }
 
-        public T PopFront(string sampleParam)
+        public T PopFront()
         {
-            if (mSize == 0)
+            if (_mSize == 0)
             {
+                Debug.Assert(_mHead == null && _mTail == null);
                 throw new InvalidOperationException();
             }
 
+            Debug.Assert(_mHead != null && _mTail != null);
+
             T retVal;
-            if (mHead == mTail)
+            if (_mHead == _mTail)
             {
-                retVal = removeTheOnlyElement();
+                retVal = RemoveTheOnlyElement();
             }
             else
             {
-                retVal = mHead.data;
-                mHead.next.prev = null;
-                mHead = null;
+                retVal = _mHead.Data;
+                _mHead.Next.Prev = null;
+                _mHead = _mHead.Next;
             }
 
-            mSize--;
+            _mSize--;
             return retVal;
         }
 
         public T Front()
         {
-            if (mSize == 0)
+            if (_mSize == 0)
             {
                 throw new InvalidOperationException();
             }
-            else
-            {
-                return mHead.data;
-            }
+
+            return _mHead.Data;
         }
 
         public T Back()
         {
-            if (mSize == 0)
+            if (_mSize == 0)
             {
                 throw new InvalidOperationException();
             }
             else
             {
-                return mTail.data;
+                return _mTail.Data;
             }
         }
 
-        public int size() {
-            return mSize;
+        public int Size() {
+            return _mSize;
         }
 
-        private void createTheOnlyElement(T data)
+        private void CreateTheOnlyElement(T data)
         {
-            System.Diagnostics.Debug.Assert(mHead == null);
-            System.Diagnostics.Debug.Assert(mTail == null);
+            System.Diagnostics.Debug.Assert(_mHead == null);
+            System.Diagnostics.Debug.Assert(_mTail == null);
 
-            Node<T> node = new Node<T>(null, null, data);
-            mHead = node;
-            mTail = node;
+            var node = new Node<T>(null, null, data);
+            _mHead = node;
+            _mTail = node;
+
         }
 
-        private T removeTheOnlyElement()
+        private T RemoveTheOnlyElement()
         {
-            System.Diagnostics.Debug.Assert(mHead == mTail);
+            System.Diagnostics.Debug.Assert(_mHead == _mTail);
 
-            T retValue = mHead.data;
-            mHead = null;
-            mTail = null;
+            var retValue = _mHead.Data;
+            _mHead = null;
+            _mTail = null;
 
             return retValue;
+        }
+
+
+
+        private class Enumerator<TR> : IEnumerator<TR>
+        {
+            private Node<TR> _node;
+
+            public Enumerator(Node<TR> node)
+            {
+                _node = node;
+            }
+
+            public TR Current
+            {
+                get
+                {
+                    if (_node == null)
+                    {
+                        throw new InvalidOperationException();
+                    }
+
+                    return _node.Data;
+                }
+            }
+
+            object IEnumerator.Current => this;
+
+            public void Dispose() { }
+
+            public bool MoveNext()
+            {
+                if (_node == null)
+                {
+                    return false;
+                }
+
+                _node = _node.Next;
+                return true;
+            }
+
+            public void Reset()
+            {
+                _node = null;
+            }
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return new Enumerator<T>(_mHead);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return new Enumerator<T>(_mHead);
         }
     }
 }

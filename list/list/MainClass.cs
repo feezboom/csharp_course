@@ -6,12 +6,23 @@ using System.Threading.Tasks;
 
 namespace list
 {
-    class MainClass
+    internal class MainClass
     {
         static void Main(string[] args) {
             Console.WriteLine("Hello, World!");
-            MyList<int> myList = new MyList<int>();
+            var myList = new MyList<int>();
+
             myList.PushBack(5);
+            myList.PushFront(46);
+            myList.PushFront(35);
+            myList.PushBack(44);
+
+            myList.PopFront();
+
+            Console.WriteLine(myList.Front());
+            Console.WriteLine(myList.Back());
+
+            Console.ReadLine();
         }
     }
 }
